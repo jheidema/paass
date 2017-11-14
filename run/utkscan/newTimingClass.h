@@ -135,7 +135,7 @@ public :
    void SetBeta(Int_t n,Double_t val){beta[n]=val;}
    void SetGamma(Int_t n,Double_t val){gamma[n]=val;}
 
-   void CrossCorrelation(vector <unsigned int> *result,vector<unsigned int> *trace1,vector<unsigned int> *trace2);
+   Int_t CrossCorrelation(vector<unsigned int> *trace1,vector<unsigned int> *trace2, TGraph *fGraph);
 
 };
 
@@ -311,8 +311,13 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   const UInt_t size2=trace_stop1->size();
   const UInt_t size3=trace_stop2->size();
 
- 
+  Int_t phase[2]={0,0};
 
+  if(size0>0&&size1>0)
+    phase[0]=CrossCorrelation(trace_start1,trace_start2,fXCorrelation[0]);
+  if(size2>0&&size3>0)
+    phase[1]=CrossCorrelation(trace_stop1,trace_stop2,fXCorrelation[1]);
+  cout << "Phase: " << phase[0] << " " << phase[1] << endl;
   /* cout<<"Size "<<size0<<endl;  */
   /* cout<<"Size "<<size1<<endl;  */
   /* cout<<"Size "<<size2<<endl;  */
@@ -329,7 +334,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size1!=0){
     for(UInt_t j=0;j<size1;j++){
-      fTraces[1]->SetPoint(j,factor*j,trace_start2->at(j));
+      fTraces[1]->SetPoint(j,factor*(j+phase[0]),trace_start2->at(j));
     }
   }
   if(size2!=0){
@@ -339,7 +344,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size3!=0){
     for(UInt_t j=0;j<size3;j++){
-      fTraces[3]->SetPoint(j,factor*j,trace_stop2->at(j));
+      fTraces[3]->SetPoint(j,factor*(j+phase[1]),trace_stop2->at(j));
     }
   }
 
@@ -368,11 +373,10 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
       }
     }
 
-    vector <unsigned int> *result = new vector <unsigned int>;  
-    //vector <int> *result2 = new vector <int>;  
-    CrossCorrelation(result,trace_start1,trace_start1);
-    //CrossCorrelation(result2,trace_stop1,trace_stop2);
     fXCorrelation[0]->Draw("*AL");
+    fXCorrelation[1]->SetLineColor(kBlue);
+    fXCorrelation[1]->SetMarkerColor(kBlue);
+    fXCorrelation[1]->Draw("*L");
     return;
   }
   
@@ -566,29 +570,42 @@ void  newTimingClass::Trap_filter(Long64_t entry,UInt_t length,UInt_t gap){
 }
 
 
-void newTimingClass::CrossCorrelation(vector <unsigned int> *result,vector<unsigned int> *trace1,vector<unsigned int> *trace2){
+Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsigned int> *trace2, TGraph *fGraph){
 
   // cout<<"HERE"<< trace1->size()<<" "<<trace2->size()<<endl;
 
-  UInt_t offset= trace1->size();
+  Int_t offset= trace1->size();
+  //  cout << "Trace Length: " << offset << endl;
+  Int_t max=-9999;
+  Int_t max_bin=-9999;
+  for(Int_t n=-50;n<50;n++){
+    //      cout<<n<<" "<<offset<<endl;  
+    Int_t conv=0;
 
-  for(UInt_t n=0;n<2*trace1->size();n++){
-    
-    UInt_t conv=0;
-    
-    for(UInt_t m=0;m<trace2->size();m++){
+    /* Int_t x0=0; */
+    /* if((n-offset)>0) */
+    /*   x0=n-offset+1; */
+    /* Int_t xf=n; */
+    /* if(n>(offset-1)) */
+    /*    xf=offset-1; */
+ 
+   
+    for(Int_t m=0;m<offset;m++){
       
-      if((m+n)>offset && (m+n-offset)<200){
-	conv+=trace1->at(m)*trace2->at(m+n-offset)/1000000.;
-	cout<<"trace "<<m<<" "<<trace2->at(m+n-offset)<<" "<<m+n-offset<<endl;
+      if(m>=abs(n)&&(m<200-abs(n))&&m<200){
+	conv+=trace1->at(m)*trace2->at(m+n)/1000000.;
+	//	cout<<"trace "<<m<<" "<<m+n<<" "<<trace2->at(m+n)<<" "<<n<<endl;
       }
     }
-    result->push_back(conv);
-    fXCorrelation[0]->SetPoint(n,n,conv);
+    if(max<conv){
+      max=conv;
+      max_bin = n;
+    }
+    fGraph->SetPoint(n+50,n,conv);
     
   }
-  
-  return;
+ 
+  return max_bin;
 }
 
 

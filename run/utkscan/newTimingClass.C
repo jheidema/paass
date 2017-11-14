@@ -59,7 +59,8 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename)
      if(jentry%10000==0)
 	cout<<"."<<flush;
      //Fit(jentry,kTRUE);
-     Fit(jentry,kFALSE); //No fix beta and gamma
+     //Fit(jentry,kFALSE); //No fix beta and gamma
+     //Plot(jentry,kTRUE); //No fix beta and gamma
      //cout<<jentry<<"Filling... "<<endl;
      outTree->Fill();
      
