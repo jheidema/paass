@@ -91,8 +91,8 @@ public :
    Double_t ROOT_qdc[4];
    Double_t ROOT_max[4];
 
-   vector<unsigned int) *normtrace1;
-   vector<unsigned int) *normtrace2;
+//   vector<unsigned int> *normtrace1;
+//   vector<unsigned int> *normtrace2;
      
    TGraph *fTraces[4];
    TF1 *fFits[4];
@@ -582,7 +582,10 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
   Int_t max=-9999;
   Int_t max_bin=-9999;
 
-  Normalize(trace1, trace2, normtrace1, normtrace2);
+  vector<unsigned int> *norm1 (trace1);
+  vector<unsigned int> *norm2 (trace1);
+
+  Normalize(trace1, trace2, norm1, norm2);
 
   for(Int_t n=-50;n<50;n++){
     //      cout<<n<<" "<<offset<<endl;  
@@ -606,7 +609,7 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
   return max_bin;
 }
 
-void newTimingClass::Normalize(vector<unsigned int> *trace1,vector<unsigned int> *trace2, vector<unsigned int> *normtrace1, vector<unsigned int> *normtrace2){
+void Normalize(vector<unsigned int> *trace1,vector<unsigned int> *trace2){
   /// First find the minimum subtract baseline
 
   Int_t size1 = trace1->size();
@@ -629,15 +632,15 @@ void newTimingClass::Normalize(vector<unsigned int> *trace1,vector<unsigned int>
   UInt_t traceint1 = 0, traceint2 = 0;
 
   for (int in = 0; in<size1 || in<size2; in++){
-	normtrace1[in] = trace1->at(in)-basemin[0]; if(in>0) traceint1 += 0.5*(normtrace1[in]+normtrace1[in-1]);
-	normtrace2[in] = trace2->at(in)-basemin[1]; if(in>0) traceint2 += 0.5*(normtrace2[in]+normtrace2[in-1]);
+	trace1[in] = trace1->at(in)-basemin[0]; if(in>0) traceint1 += 0.5*(trace1[in]+trace1[in-1]);
+	trace2[in] = trace2->at(in)-basemin[1]; if(in>0) traceint2 += 0.5*(trace2[in]+trace2[in-1]);
    }
 
    cout << "Normalization Constants: t1=" << traceint1 << " t2=" << traceint2 << endl;
 
  for (int is=0; is<size1 || is<size2; is++){
-	normtrace1[is] = normtrace1[is]*1./traceint1;
-        normtrace2[is] = normtrace2[is]*1./traceint2;
+	trace1[is] = trace1[is]*1./traceint1;
+        trace2[is] = trace2[is]*1./traceint2;
    } 
 
 }
