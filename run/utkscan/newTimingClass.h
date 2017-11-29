@@ -90,7 +90,10 @@ public :
    Double_t ROOT_chisq[4];
    Double_t ROOT_qdc[4];
    Double_t ROOT_max[4];
-   
+
+   vector<unsigned int) *normtrace1;
+   vector<unsigned int) *normtrace2;
+     
    TGraph *fTraces[4];
    TF1 *fFits[4];
    TGraph *fResiduals[4];
@@ -136,7 +139,7 @@ public :
    void SetGamma(Int_t n,Double_t val){gamma[n]=val;}
 
    Int_t CrossCorrelation(vector<unsigned int> *trace1,vector<unsigned int> *trace2, TGraph *fGraph);
-
+   void Normalize(vector<unsigned int> *trace1,vector<unsigned int> *trace2,vector<unsigned int> *normtrace1,vector<unsigned int> *normtrace2);
 };
 
 #endif
@@ -578,18 +581,13 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
   //  cout << "Trace Length: " << offset << endl;
   Int_t max=-9999;
   Int_t max_bin=-9999;
+
+  Normalize(trace1, trace2, normtrace1, normtrace2);
+
   for(Int_t n=-50;n<50;n++){
     //      cout<<n<<" "<<offset<<endl;  
     Int_t conv=0;
 
-    /* Int_t x0=0; */
-    /* if((n-offset)>0) */
-    /*   x0=n-offset+1; */
-    /* Int_t xf=n; */
-    /* if(n>(offset-1)) */
-    /*    xf=offset-1; */
- 
-   
     for(Int_t m=0;m<offset;m++){
       
       if(m>=abs(n)&&(m<200-abs(n))&&m<200){
@@ -608,5 +606,40 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
   return max_bin;
 }
 
+void newTimingClass::Normalize(vector<unsigned int> *trace1,vector<unsigned int> *trace2, vector<unsigned int> *normtrace1, vector<unsigned int> *normtrace2){
+  /// First find the minimum subtract baseline
+
+  Int_t size1 = trace1->size();
+  Int_t size2 = trace2->size();
+
+  Int_t minbin[2]= {0};
+  Int_t basemin[2] = {trace1->at(0),trace2->at(0)};
+  basemin[0] = *std::min_element(trace1,trace1+size1);
+  basemin[1] = *std::min_element(trace2,trace2+size2);
+   
+
+
+//  for (int ij = 1; ij<size1 || ij<size2; ij++){
+//	if (basemin[0]>trace1->at(ij)){ basemin[0]=trace1->at(ij); minbin[0] = ij;}
+//	if (basemin[1]>trace2->at(ij)){ basemin[1]=trace2->at(ij); minbin[1] = ij;}
+//    }
+  cout << "Minimums: t1(" << basemin[0] << ") t2(" << basemin[1] << ")" << endl;  
+	///Subtracting the minimum for better normalization
+
+  UInt_t traceint1 = 0, traceint2 = 0;
+
+  for (int in = 0; in<size1 || in<size2; in++){
+	normtrace1[in] = trace1->at(in)-basemin[0]; if(in>0) traceint1 += 0.5*(normtrace1[in]+normtrace1[in-1]);
+	normtrace2[in] = trace2->at(in)-basemin[1]; if(in>0) traceint2 += 0.5*(normtrace2[in]+normtrace2[in-1]);
+   }
+
+   cout << "Normalization Constants: t1=" << traceint1 << " t2=" << traceint2 << endl;
+
+ for (int is=0; is<size1 || is<size2; is++){
+	normtrace1[is] = normtrace1[is]*1./traceint1;
+        normtrace2[is] = normtrace2[is]*1./traceint2;
+   } 
+
+}
 
 #endif // #ifdef newTimingClass_cxx
