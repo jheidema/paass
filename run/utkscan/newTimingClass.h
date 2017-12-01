@@ -338,7 +338,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size1!=0){
     for(UInt_t j=0;j<size1;j++){
-      fTraces[1]->SetPoint(j,factor*(j+phase[0]),trace_start2->at(j));
+     if ((Int_t)(j+phase[0])>=0) fTraces[1]->SetPoint(j,factor*(Int_t)(j+phase[0]),trace_start2->at(j));
     }
   }
   if(size2!=0){
@@ -348,7 +348,8 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size3!=0){
     for(UInt_t j=0;j<size3;j++){
-      fTraces[3]->SetPoint(j,factor*(j+phase[1]),trace_stop2->at(j));
+     if ((Int_t)(j+phase[1])>=0) fTraces[3]->SetPoint(j,factor*(Int_t)(j+phase[1]),trace_stop2->at(j));
+//     cout << "j: " << j << " X: " << (Int_t)(j+phase[1]) << " Y: " << trace_stop2->at(j) << endl;
     }
   }
 
@@ -580,7 +581,7 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
 
   Int_t offset= trace1->size();
   //  cout << "Trace Length: " << offset << endl;
-  Int_t max=-9999;
+  double max=-9999;
   Int_t max_bin=-9999;
 
   Int_t minbin[2]= {0};
@@ -604,19 +605,19 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
 
 
  for (int is=0; is<offset; is++){
-	norm1[is] = trace1->at(is)*1.0/traceint1;
-        norm2[is] = trace2->at(is)*1.0/traceint2;
+	norm1[is] = norm1.at(is)*1.0/traceint1;
+        norm2[is] = norm2.at(is)*1.0/traceint2;
    } 
   
 
   for(Int_t n=-20;n<20;n++){
     //      cout<<n<<" "<<offset<<endl;  
-    Int_t conv=0;
+    double conv=0;
 
     for(Int_t m=0;m<offset;m++){
       
       if(m>=abs(n)&&(m<200-abs(n))&&m<200){
-	conv+=trace1->at(m)*trace2->at(m+n)/1000000.;
+	conv+=norm1.at(m)*norm2.at(m+n)/1000000.;
 	//	cout<<"trace "<<m<<" "<<m+n<<" "<<trace2->at(m+n)<<" "<<n<<endl;
       }
     }
