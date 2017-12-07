@@ -98,6 +98,7 @@ public :
    TGraph *fTraces[4];
    TF1 *fFits[4];
    TGraph *fResiduals[4];
+   TGraph *XTraces[2];
    TGraph *fXCorrelation[2];
    Int_t fStatus[4]={-1,-1,-1,-1};
 
@@ -171,6 +172,7 @@ newTimingClass::newTimingClass(TTree *tree) : fChain(0)
    fResiduals[j]=new TGraph();
    fFits[j]=new TF1(fname,sipmfunc,0,1,6);
    if(j<2)
+   XTraces[j] = new TGraph();
    fXCorrelation[j]=new TGraph();
    }
 
@@ -184,8 +186,9 @@ newTimingClass::~newTimingClass()
     delete fResiduals[j];
     delete fTraces[j];
     delete fFits[j];
-   if(j<2)
+   if(j<2){
    delete fXCorrelation[j];
+   delete XTraces[j];}
 
   }
 }
@@ -329,6 +332,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   
   for(Int_t j=0;j<4;j++){
     fTraces[j]->Set(0); 
+    if (j<2) XTraces[j]->Set(0);
   }
 
   if(size0!=0){
@@ -338,7 +342,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size1!=0){
     for(UInt_t j=0;j<size1;j++){
-     if ((Int_t)(j+phase[0])>=0) fTraces[1]->SetPoint(j,factor*(Int_t)(j+phase[0]),trace_start2->at(j));
+     fTraces[1]->SetPoint(j,factor*(Int_t)(j+phase[0]),trace_start2->at(j));
     }
   }
   if(size2!=0){
@@ -348,10 +352,23 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size3!=0){
     for(UInt_t j=0;j<size3;j++){
-     if ((Int_t)(j+phase[1])>=0) fTraces[3]->SetPoint(j,factor*(Int_t)(j+phase[1]),trace_stop2->at(j));
+      fTraces[3]->SetPoint(j,factor*(Int_t)(j+phase[1]),trace_stop2->at(j));
 //     cout << "j: " << j << " X: " << (Int_t)(j+phase[1]) << " Y: " << trace_stop2->at(j) << endl;
     }
   }
+  
+
+  /// Now add the phase aligned start and stop graphs
+  UInt_t Xsize = 0;
+
+  for (UInt_t iX=0; iX<2; iX++){
+   if (iX==0&&(size1!=0 && size0!=0)) Xsize = size0;
+   else if(iX==1&&(size2!=0 || size3!=0)) Xsize = size2;
+   else continue;
+   for(UInt_t j=0; j<Xsize; j++){
+      XTraces[iX]->SetPoint(j, factor*j,(fTraces[2*iX]->GetY()[j]+fTraces[2*iX+1]->Eval(factor*j))/2);
+    }
+   }
 
   if(size0==0&&size1==0&&size0==0&&size3==0)
     return ;
@@ -360,13 +377,13 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
       TCanvas *c;
       if(!gPad){
 	c=new TCanvas();
-	c->Divide(2,2); 
+	c->Divide(2,3); 
       }
       else{
 	//  c=(TCanvas*)gPad;
 	c=gPad->GetCanvas();
 	c->Clear();
-	c->Divide(2,2);     
+	c->Divide(2,3);     
       }
       for(Int_t i=0;i<4;i++){
 	c->cd(i+1);   
@@ -376,8 +393,15 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
 	else
 	  continue;
       }
+     for(Int_t i=0; i<2; i++){
+     c->cd(i+5);
+      if(XTraces[i]){
+       XTraces[i]->Draw("AL*");
+       }
+      }
     }
 
+    TCanvas *c2 = new TCanvas();
     fXCorrelation[0]->Draw("*AL");
     fXCorrelation[1]->SetLineColor(kBlue);
     fXCorrelation[1]->SetMarkerColor(kBlue);
