@@ -18,7 +18,7 @@
 #include <TCanvas.h>
 #include <TGraph.h>
 #include <iostream>
-
+#include <TAxis.h>
 
 // Header file for the classes stored in the TTree if any.
 #include "vector"
@@ -152,9 +152,11 @@ newTimingClass::newTimingClass(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("SmallPlastic_4A7C_ArrayJ_20170922_003_newProc.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/data/NEXT/TestStand/ToF_Cf.root");
+//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("SmallPlastic_4A7C_ArrayJ_20170922_003_newProc.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("SmallPlastic_4A7C_ArrayJ_20170922_003_newProc.root");
+         f = new TFile("/data/NEXT/TestStand/ToF_Cf.root");
+//         f = new TFile("SmallPlastic_4A7C_ArrayJ_20170922_003_newProc.root");
       }
       f->GetObject("timing",tree);
 
@@ -359,16 +361,16 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   
 
   /// Now add the phase aligned start and stop graphs
-  UInt_t Xsize = 0;
-
-  for (UInt_t iX=0; iX<2; iX++){
-   if (iX==0&&(size1!=0 && size0!=0)) Xsize = size0;
-   else if(iX==1&&(size2!=0 || size3!=0)) Xsize = size2;
-   else continue;
-   for(UInt_t j=0; j<Xsize; j++){
-      XTraces[iX]->SetPoint(j, factor*j,(fTraces[2*iX]->GetY()[j]+fTraces[2*iX+1]->Eval(factor*j))/2);
-    }
-   }
+//  UInt_t Xsize = 0;
+//
+//  for (UInt_t iX=0; iX<2; iX++){
+//   if (iX==0&&(size1!=0 && size0!=0)) Xsize = size0;
+//   else if(iX==1&&(size2!=0 || size3!=0)) Xsize = size2;
+//   else continue;
+//   for(UInt_t j=0; j<Xsize; j++){
+//      XTraces[iX]->SetPoint(j, factor*j,(fTraces[2*iX]->GetY()[j]+fTraces[2*iX+1]->Eval(factor*j))/2);
+//    }
+//   }
 
   if(size0==0&&size1==0&&size0==0&&size3==0)
     return ;
@@ -393,19 +395,32 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
 	else
 	  continue;
       }
-     for(Int_t i=0; i<2; i++){
-     c->cd(i+5);
-      if(XTraces[i]){
-       XTraces[i]->Draw("AL*");
-       }
-      }
     }
 
-    TCanvas *c2 = new TCanvas();
+   /* TCanvas *c2;
+      if(!gPad){
+	c2=new TCanvas();
+	c2->Divide(2,2); 
+      }
+      else{
+	//  c=(TCanvas*)gPad;
+	c2=gPad->GetCanvas();
+	c2->Clear();
+	c2->Divide(2,2);     
+      }
+     for(Int_t i=0; i<2; i++){
+     c2->cd(i+1);
+      if(XTraces[i]){
+       XTraces[i]->Draw("AL*");
+       XTraces[i]->GetXaxis()->SetRangeUser(40,80);
+       }
+      }
+    c2->cd(3);
     fXCorrelation[0]->Draw("*AL");
+    c2->cd(4);
     fXCorrelation[1]->SetLineColor(kBlue);
     fXCorrelation[1]->SetMarkerColor(kBlue);
-    fXCorrelation[1]->Draw("*L");
+    fXCorrelation[1]->Draw("*AL");*/
     return;
   }
   
