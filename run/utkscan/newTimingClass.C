@@ -8,6 +8,7 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename)
 {
 //   In a ROOT session, you can do:
 //      root> .L newTimingClass.C
+//      root> TTree *T=timing; newTimingClass t(T);   //This is to be used when a different file is loaded than the one specified in the include file.
 //      root> newTimingClass t
 //      root> t.GetEntry(12); // Fill t data members with entry number 12
 //      root> t.Show();       // Show values of entry 12
@@ -45,6 +46,15 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename)
    outTree->Branch("ROOT_QDC[4]",&ROOT_qdc,"QDC[4]/D");
    outTree->Branch("ROOT_time[4]",&ROOT_time,"time[4]/D");
    outTree->Branch("ROOT_max[4]",&ROOT_max,"Max[4]/I");
+
+   outTree->Branch("ROOT_Xphase[2]",&ROOT_Xphase,"Xphase[2]/D");
+   outTree->Branch("ROOT_Xbeta[2]",&ROOT_Xbeta,"Xbeta[2]/D");
+   outTree->Branch("ROOT_Xgamma[2]",&ROOT_Xgamma,"Xgamma[2]/D");
+   outTree->Branch("ROOT_XChiSq[2]",&ROOT_Xchisq,"XChiSq[2]/D");
+//   outTree->Branch("ROOT_Status[4]",&fStatus,"Stat[4]/I");
+   outTree->Branch("ROOT_XQDC[2]",&ROOT_Xqdc,"XQDC[2]/D");
+   outTree->Branch("ROOT_Xtime[4]",&ROOT_Xtime,"Xtime[4]/D");
+   outTree->Branch("ROOT_Xmax[2]",&ROOT_Xmax,"XMax[2]/I");
    
    if(nentries==-1)
      nentries = fChain->GetEntriesFast();
@@ -59,7 +69,7 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename)
      if(jentry%10000==0)
 	cout<<"."<<flush;
      //Fit(jentry,kTRUE);
-     //Fit(jentry,kFALSE); //No fix beta and gamma
+     Fit(jentry,kFALSE); //No fix beta and gamma
      //Plot(jentry,kTRUE); //No fix beta and gamma
      //cout<<jentry<<"Filling... "<<endl;
      outTree->Fill();
