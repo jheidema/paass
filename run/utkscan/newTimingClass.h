@@ -92,11 +92,24 @@ public :
    Double_t ROOT_qdc[4];
    Double_t ROOT_max[4];
 
+   Double_t Xbeta[4];
+   Double_t Xgamma[4];
+   
+   Double_t ROOT_Xphase[2];
+   Double_t ROOT_Xtime[4];
+   Double_t ROOT_Xbeta[2];
+   Double_t ROOT_Xgamma[2];
+   Double_t ROOT_Xchisq[2];
+   Double_t ROOT_Xqdc[2];
+   Double_t ROOT_Xmax[2];
+
 //   vector<unsigned int> *normtrace1;
 //   vector<unsigned int> *normtrace2;
      
    TGraph *fTraces[4];
+   TGraph *XTraces[2];
    TF1 *fFits[4];
+   TF1 *XFits[2];
    TGraph *fResiduals[4];
    TGraph *fXCorrelation[2];
    Int_t fStatus[4]={-1,-1,-1,-1};
@@ -170,8 +183,13 @@ newTimingClass::newTimingClass(TTree *tree) : fChain(0)
    fTraces[j]=new TGraph();
    fResiduals[j]=new TGraph();
    fFits[j]=new TF1(fname,sipmfunc,0,1,6);
-   if(j<2)
-   fXCorrelation[j]=new TGraph();
+   if(j<2){
+   Xbeta[j] = 0.12;
+   Xgamma[j] = 0.24;
+   sprintf(fname,"Xf_%d",j);
+   XFits[j] = new TF1(fname,sipmfunc,0,1,6);
+   XTraces[j] = new TGraph();
+   fXCorrelation[j]=new TGraph();}
    }
 
 }
@@ -184,9 +202,11 @@ newTimingClass::~newTimingClass()
     delete fResiduals[j];
     delete fTraces[j];
     delete fFits[j];
-   if(j<2)
+   if(j<2){
    delete fXCorrelation[j];
-
+   delete XTraces[j];
+   delete XFits[j];
+   }
   }
 }
 
@@ -321,7 +341,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
     phase[0]=CrossCorrelation(trace_start1,trace_start2,fXCorrelation[0]);
   if(size2>0&&size3>0)
     phase[1]=CrossCorrelation(trace_stop1,trace_stop2,fXCorrelation[1]);
-  cout << "Phase: " << phase[0] << " " << phase[1] << endl;
+//  cout << "Phase: " << phase[0] << " " << phase[1] << endl;
   /* cout<<"Size "<<size0<<endl;  */
   /* cout<<"Size "<<size1<<endl;  */
   /* cout<<"Size "<<size2<<endl;  */
@@ -329,6 +349,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   
   for(Int_t j=0;j<4;j++){
     fTraces[j]->Set(0); 
+    if (j<2) XTraces[j]->Set(0);
   }
 
   if(size0!=0){
@@ -338,7 +359,8 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size1!=0){
     for(UInt_t j=0;j<size1;j++){
-     if ((Int_t)(j+phase[0])>=0) fTraces[1]->SetPoint(j,factor*(Int_t)(j+phase[0]),trace_start2->at(j));
+     if(phase[0]!=-9999) fTraces[1]->SetPoint(j,factor*(Int_t)(j+phase[0]),trace_start2->at(j));
+     else fTraces[1]->SetPoint(j,factor*(Int_t)(j),trace_start2->at(j));
     }
   }
   if(size2!=0){
@@ -348,10 +370,25 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
   }
   if(size3!=0){
     for(UInt_t j=0;j<size3;j++){
-     if ((Int_t)(j+phase[1])>=0) fTraces[3]->SetPoint(j,factor*(Int_t)(j+phase[1]),trace_stop2->at(j));
+     if(phase[1]!=-9999) fTraces[3]->SetPoint(j,factor*(Int_t)(j+phase[1]),trace_stop2->at(j));
+     else fTraces[3]->SetPoint(j,factor*(Int_t)(j),trace_stop2->at(j));
 //     cout << "j: " << j << " X: " << (Int_t)(j+phase[1]) << " Y: " << trace_stop2->at(j) << endl;
     }
   }
+  
+
+  /// Now add the phase aligned start and stop graphs
+  UInt_t Xsize = 0;
+
+  for (UInt_t iX=0; iX<2; iX++){
+   if (phase[iX]==-9999) continue;
+   if (iX==0&&(size1!=0 && size0!=0)) Xsize = size0;
+   else if(iX==1&&(size2!=0 || size3!=0)) Xsize = size2;
+   else continue;
+   for(UInt_t j=0; j<Xsize; j++){
+      XTraces[iX]->SetPoint(j, factor*j,(fTraces[2*iX]->GetY()[j]+fTraces[2*iX+1]->Eval(factor*j))/2);
+    }
+   }
 
   if(size0==0&&size1==0&&size0==0&&size3==0)
     return ;
@@ -376,12 +413,33 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
 	else
 	  continue;
       }
-    }
 
+    TCanvas *c2;
+      if(!gPad){
+	c2=new TCanvas();
+	c2->Divide(2,2); 
+      }
+      else{
+	//  c=(TCanvas*)gPad;
+	c2=gPad->GetCanvas();
+	c2->Clear();
+	c2->Divide(2,2);     
+      }
+     for(Int_t i=0; i<2; i++){
+     c2->cd(i+1);
+      if(XTraces[i]){
+       XTraces[i]->Draw("AL*");
+//       XTraces[i]->GetXaxis()->SetRangeUser(40,80);
+       }
+      }
+    c2->cd(3);
     fXCorrelation[0]->Draw("*AL");
+    c2->cd(4);
     fXCorrelation[1]->SetLineColor(kBlue);
     fXCorrelation[1]->SetMarkerColor(kBlue);
-    fXCorrelation[1]->Draw("*L");
+    fXCorrelation[1]->Draw("*AL");
+    }
+    
     return;
   }
   
@@ -390,7 +448,7 @@ void newTimingClass::Plot(Long64_t entry,Bool_t draw){
 void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
   
   Plot(entry,false);
-  TF1 *fit[4];
+//  TF1 *fit[4];
 
 
   
@@ -454,8 +512,9 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
     default:
       break;
     }
-    // cout<<"Maximum is "<<max_position*4<<endl;
-    
+
+//     cout<<"\n\nN points: "<<fTraces[m]->GetN()<<endl;
+//     cout<< "Max Position: " << max_position << endl;
     if(fTraces[m]->GetN()>0){
       std::pair <Double_t,Double_t> range((max_position-fit_limits[m].first)*factor,(max_position+fit_limits[m].second)*factor);
       //fit[m] =new TF1(fname,sipmfunc,range.first,range.second,6);
@@ -470,21 +529,87 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
       fFits[m]->FixParameter(5,delta[m]);
       TFitResultPtr status=fTraces[m]->Fit(fFits[m],"RNQSW");
       fStatus[m] =status->Status(); 
-      if(status->IsValid()){
-	//status->Print();
-	ROOT_phase[m]=fFits[m]->GetParameter(0)-range.first+max_position;
-	ROOT_beta[m]=fFits[m]->GetParameter(2);
-	ROOT_gamma[m]=fFits[m]->GetParameter(3);
-	ROOT_chisq[m]=fFits[m]->GetChisquare();
-	//ROOT_time[m]=fFits[m]->GetParameter(0)+timestamp[m];
-	ROOT_time[m]=ROOT_phase[m]*4+timestamp[m];
-	ROOT_max[m]=maximum[m];
+       if(status->IsValid()){
+ //	status->Print();
+ 	ROOT_phase[m]=fFits[m]->GetParameter(0)-range.first+max_position;
+ 	ROOT_beta[m]=fFits[m]->GetParameter(2);
+ 	ROOT_gamma[m]=fFits[m]->GetParameter(3);
+ 	ROOT_chisq[m]=fFits[m]->GetChisquare();
+ 	//ROOT_time[m]=fFits[m]->GetParameter(0)+timestamp[m];
+ 	ROOT_time[m]=ROOT_phase[m]*4+timestamp[m];
+ 	ROOT_max[m]=maximum[m];
       }
       
       //cout<<"PAASS phase "<<phase[m]<<"\t ROOT phase "<<ROOT_phase[m]<<endl;
-      
+
     }
   }
+
+  
+    ////////////////////////////////////
+    // Now fit the XCorrelated signals//
+    ////////////////////////////////////
+//  Double_t Xphase[4]={start1_phase/4.,start2_phase/4.,stop1_phase/4.,stop2_phase/4.};
+
+  Double_t Xqdc[2]={(start1_qdc+start2_qdc)/2,(stop1_qdc+stop2_qdc)/2};
+  Double_t Xbaseline[2]={(start1_abase+start2_abase)/2,(stop1_abase+stop2_abase)/2};
+  Int_t Xmaximum[2]={(StartMaximum[0]+StartMaximum[1])/2,(StopTimeMaximum[0]+StopTimeMaximum[1])/2};
+
+//  Double_t Xtimestamp[4]={StartTimeStamp[0],StartTimeStamp[1],StopTimeStamp[0],StopTimeStamp[1]};
+
+  Double_t Xdelta[2]={3.5,3.5};
+  
+  Double_t fit_Xbeta[2]={0.12,0.12};
+  Double_t fit_Xgamma[2]={0.245,0.245};
+
+  // Fit Limits for XCorr;
+//  fit_limits.push_back(make_pair(10,10));
+//  fit_limits.push_back(make_pair(10,10));
+
+//  Char_t fname[256];
+
+  for(Int_t m=0;m<2;m++){
+    ROOT_Xphase[m]=-9999;
+    ROOT_Xbeta[m]=-9999;
+    ROOT_Xgamma[m]=-9999;
+    Xbeta[m]=fit_Xbeta[m];
+    Xgamma[m]= fit_Xgamma[m];
+    ROOT_Xqdc[m]= Xqdc[m]; // May need to fix this to extract qdc from XCorr signal
+
+//    vector <UInt_t>::iterator it;
+    
+    UInt_t max_position=0;
+
+    if(XTraces[m]->GetN()>0){
+     max_position=distance(XTraces[m]->GetY(),max_element(XTraces[m]->GetY(),XTraces[m]->GetY()+XTraces[m]->GetN()));
+
+     std::pair <Double_t,Double_t> range((max_position-fit_limits[2*m].first)*factor,(max_position+fit_limits[2*m].second)*factor);
+     //fit[m] =new TF1(fname,sipmfunc,range.first,range.second,6);
+     XFits[m]->SetRange(range.first,range.second);
+     XFits[m]->SetParameters(range.first,Xqdc[m]*0.5,Xbeta[m],Xgamma[m],Xbaseline[m],Xdelta[m]);
+     XFits[m]->SetParNames("#phi","#alpha","#beta","#gamma","Baseline","#delta");
+     XFits[m]->FixParameter(4,Xbaseline[m]);
+     if(fix){
+      XFits[m]->FixParameter(2,Xbeta[m]);
+      XFits[m]->FixParameter(3,Xgamma[m]);
+      }      
+     XFits[m]->FixParameter(5,Xdelta[m]);
+     TFitResultPtr status=XTraces[m]->Fit(XFits[m],"RNQSW");
+//     fStatus[m] =status->Status(); 
+     if(status->IsValid()){
+	//status->Print();
+      ROOT_Xphase[m]=XFits[m]->GetParameter(0)-range.first+max_position;
+      ROOT_Xbeta[m]=XFits[m]->GetParameter(2);
+      ROOT_Xgamma[m]=XFits[m]->GetParameter(3);
+      ROOT_Xchisq[m]=XFits[m]->GetChisquare();
+      //ROOT_Xtime[m]=XFits[m]->GetParameter(0)+timestamp[m];
+      ROOT_Xtime[2*m]=ROOT_Xphase[m]*4+timestamp[2*m];
+      ROOT_Xtime[2*m+1]=ROOT_Xphase[m]*4+timestamp[2*m+1];
+      ROOT_Xmax[m]=Xmaximum[m];
+      }
+      
+     }else continue;
+   }
 }
 
 
@@ -589,7 +714,7 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
   basemin[0] = *std::min_element(std::begin(*trace1),std::end(*trace1));
   basemin[1] = *std::min_element(std::begin(*trace2),std::end(*trace2));
    
-  cout << "Minimums: t1(" << basemin[0] << ") t2(" << basemin[1] << ")" << endl;  
+//  cout << "Minimums: t1(" << basemin[0] << ") t2(" << basemin[1] << ")" << endl;  
 	///Subtracting the minimum for better normalization
 
   UInt_t traceint1 = 0, traceint2 = 0;
@@ -601,7 +726,7 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
 	norm2[in] = trace2->at(in)-basemin[1]; if(in>0) traceint2 += 0.5*(norm2[in]+norm2[in-1]);
    }
 
-   cout << "Normalization Constants: t1=" << traceint1 << " t2=" << traceint2 << endl;
+//   cout << "Normalization Constants: t1=" << traceint1 << " t2=" << traceint2 << endl;
 
 
  for (int is=0; is<offset; is++){
@@ -628,7 +753,7 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
     fGraph->SetPoint(n+20,n,conv);
     
   }
- 
+  if (traceint1 < 100000 || traceint2 < 100000) max_bin = -9999;
   return max_bin;
 }
 
