@@ -3,6 +3,7 @@
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
+void FillHist(TH2F* hPs, std::vector<unsigned int> *trace);
 
 void newTimingClass::Loop(Long64_t nentries,const Char_t *filename)
 {
@@ -56,6 +57,14 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename)
    outTree->Branch("ROOT_Xtime[4]",&ROOT_Xtime,"Xtime[4]/D");
    outTree->Branch("ROOT_Xmax[2]",&ROOT_Xmax,"XMax[2]/I");
    
+  TH2F *hPulse[4];
+  char hname[200];
+  for (int iH=0; iH<4; iH++){
+    sprintf(hname,"hP%d",iH);
+   // std::cout << hname << endl;
+    hPulse[iH] = new TH2F(hname,hname,201,0,800,100,0,60000);
+   }
+
    if(nentries==-1)
      nentries = fChain->GetEntriesFast();
    
@@ -69,14 +78,44 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename)
      if(jentry%10000==0)
 	cout<<"."<<flush;
      //Fit(jentry,kTRUE);
-     Fit(jentry,kFALSE); //No fix beta and gamma
+//     Fit(jentry,kFALSE); //No fix beta and gamma
+     FillHist(hPulse[0], trace_start1);
+     FillHist(hPulse[1], trace_start2);
+     FillHist(hPulse[2], trace_stop1);
+     FillHist(hPulse[3], trace_stop2);
      //Plot(jentry,kTRUE); //No fix beta and gamma
      //cout<<jentry<<"Filling... "<<endl;
      outTree->Fill();
      
      // if (Cut(ientry) < 0) continue;
    }
+   for (int iH=0;iH<4;iH++)   hPulse[iH]->Write();
    outTree->Write();
+   
+   outputFile->Close();
    cout<<endl;
    
 }
+
+
+void FillHist(TH2F* hPs, std::vector<unsigned int> *trace){
+
+//  GetEntry(entry);
+  int factor = 4;
+  UInt_t size = trace->size();
+//  std::cout<< "Size: " << size << endl;
+  UInt_t maxval = *std::max_element(trace->begin(),trace->end());
+  if (size != 0 && 28000<maxval && maxval<32000){
+//  for (int iT=0; iT<4; iT++){
+   for (UInt_t iB=0; iB<size; iB++){
+//   std::cout << trace->at(iB) << endl;
+    hPs->Fill(((Int_t)iB)*4, trace->at(iB));
+//    hPs[0]->Fill(((Int_t)iB)*4, trace_start1->at(iB));
+//    hPs[1]->Fill(((Int_t)iB)*4, trace_start2->at(iB));
+//    hPs[2]->Fill(((Int_t)iB)*4, trace_stop1->at(iB));
+//    hPs[3]->Fill(((Int_t)iB)*4, trace_stop2->at(iB));
+   }
+//  }
+ }
+}
+

@@ -12,6 +12,8 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TF1.h>
+#include <TH1F.h>
+#include <TH2F.h>
 #include <TTree.h>
 #include <TFitResult.h>
 #include <TGraph.h>
@@ -148,6 +150,7 @@ public :
    virtual void     Fit(Long64_t entry = -1, Bool_t fix=kFALSE);
    virtual void     Residuals(Long64_t entry = -1, Bool_t fix=kFALSE);
    virtual void     Trap_filter(Long64_t entry = -1,UInt_t length=4,UInt_t gap=0);
+//   virtual void     FillHist(TH2F* hPs, std::vector<unsigned int> *trace);
 
    void SetBeta(Int_t n,Double_t val){beta[n]=val;}
    void SetGamma(Int_t n,Double_t val){gamma[n]=val;}
@@ -756,6 +759,25 @@ Int_t newTimingClass::CrossCorrelation(vector<unsigned int> *trace1,vector<unsig
   if (traceint1 < 100000 || traceint2 < 100000) max_bin = -9999;
   return max_bin;
 }
+
+// void FillHist(TH2F* hPs, Long64_t entry){
+// 
+//   GetEntry(entry);
+//   int factor = 4;
+//   UInt_t size = trace_start1->size();
+//   if (size != 0){
+//   for (int iT=0; iT<4; iT++){
+//    for (UInt_t iB=0; iB<size; iB++){
+//     hPs->Fill(((Int_t)iB)*4, trace_start1->at(iB));
+// //    hPs[0]->Fill(((Int_t)iB)*4, trace_start1->at(iB));
+// //    hPs[1]->Fill(((Int_t)iB)*4, trace_start2->at(iB));
+// //    hPs[2]->Fill(((Int_t)iB)*4, trace_stop1->at(iB));
+// //    hPs[3]->Fill(((Int_t)iB)*4, trace_stop2->at(iB));
+//    }
+//   }
+//  }
+// }
+
 
 //void Normalize(vector<unsigned int> *trace1,vector<unsigned int> *trace2){
 //  /// First find the minimum subtract baseline
