@@ -141,7 +141,7 @@ public :
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
-   virtual void Loop(Long64_t nentries =-1,const Char_t *filename=NULL);
+   virtual void Loop(Long64_t nentries =-1,const Char_t *filename=NULL, const int llimit = 10000);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1,Bool_t fix=kFALSE);
 
@@ -462,6 +462,14 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
   Double_t timestamp[4]={StartTimeStamp[0],StartTimeStamp[1],StopTimeStamp[0],StopTimeStamp[1]};
   Int_t maximum[4]={StartMaximum[0],StartMaximum[1],StopTimeMaximum[0],StopTimeMaximum[1]};
   Double_t delta[4]={3.5,3.5,3.5,3.5};
+
+  Double_t gamma_V0[2][3] = {{0.171,0.198,0.146},{0.164,0.194,0.206}};
+  Double_t gamma_V1[2][3] = {{9.13E-7,1.228E-7,4.162E-7},{1.058E-6,1.271E-7,1.508E-7}};
+  Double_t gamma_V2[2][3] = {{-6.012E-12,-1.183E-13,-5.268E-13},{-7.733E-12,-1.183E-13,-2.400E-13}};
+  
+  ////// Variable Gamma params for new boards /////////
+
+
   //Old Boards
   //Double_t fit_gamma[4]={0.2641,0.2675,0.121,0.1009};
   //Double_t fit_beta[4]={0.0973,0.1281,0.01008,0.1424};
@@ -469,8 +477,14 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
   //Double_t fit_beta[4]={0.1162,0.117,0.1178,0.119};
   //Double_t fit_gamma[4]={0.2504,0.2611,0.2611,0.2611};
   //UtkScan
-  Double_t fit_beta[4]={0.12,0.12,0.12,0.12};
-  Double_t fit_gamma[4]={0.245,0.245,0.245,0.245};
+  // old
+//  Double_t fit_beta[4]={0.12,0.12,0.12,0.12};
+//  Double_t fit_gamma[4]={0.245,0.245,0.245,0.245};
+
+  Double_t fit_beta[4]={0.1317,0.1102,0.1266,.01250};
+  Double_t fit_gamma[4]={0.2494,0.2554,0.245,0.245};
+
+
   vector<pair<Int_t,Int_t>>fit_limits;
   fit_limits.push_back(make_pair(10,10));
   fit_limits.push_back(make_pair(10,10));
@@ -527,7 +541,12 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
       fFits[m]->FixParameter(4,baseline[m]);
       if(fix){
 	fFits[m]->FixParameter(2,beta[m]);
-	fFits[m]->FixParameter(3,gamma[m]);
+	if (m <2) fFits[m]->FixParameter(3,gamma[m]);
+	else {
+        if (qdc[m]<=50000) fFits[m]->FixParameter(3, gamma_V0[m-2][0]+gamma_V1[m-2][0]*qdc[m]+(gamma_V2[m-2][0]*qdc[m])*qdc[m]);
+        if (qdc[m]>50000 && qdc[m]<400000) fFits[m]->FixParameter(3, gamma_V0[m-2][1]+gamma_V1[m-2][1]*qdc[m]+(gamma_V2[m-2][1]*qdc[m])*qdc[m]);
+        if (qdc[m]>=400000) fFits[m]->FixParameter(3, gamma_V0[m-2][2]+gamma_V1[m-2][2]*qdc[m]+(gamma_V2[m-2][2]*qdc[m])*qdc[m]);
+       }
       }      
       fFits[m]->FixParameter(5,delta[m]);
       TFitResultPtr status=fTraces[m]->Fit(fFits[m],"RNQSW");
