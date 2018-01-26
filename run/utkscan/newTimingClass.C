@@ -84,10 +84,10 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename, const int ll
      if(jentry%10000==0)
 	cout<<"."<<flush;
 //     Fit(jentry,kTRUE);
-     Fit(jentry,kFALSE); //No fix beta and gamma
+//     Fit(jentry,kFALSE); //No fix beta and gamma
 
-//     FillHist(hPulse[0], trace_start1, llimit);
-//     FillHist(hPulse[1], trace_start2, llimit);
+     FillHist(hPulse[0], trace_start1, llimit);
+     FillHist(hPulse[1], trace_start2, llimit);
 //     FillHist(hPulse[2], trace_stop1, llimit);
 //     FillHist(hPulse[3], trace_stop2, llimit);
      //Plot(jentry,kTRUE); //No fix beta and gamma
@@ -131,7 +131,7 @@ void FillHist(TH2F* hPs, std::vector<unsigned int> *trace, const int llimit){
   UInt_t minval = *std::min_element(trace->begin(),trace->end());
   if (size != 0 && llimit<(Int_t)maxval && (Int_t)maxval<ulimit){
    for (UInt_t iB=0; iB<size; iB++){
-    hPs->Fill(((Int_t)iB)*4, trace->at(iB));
+    hPs->Fill(((Int_t)iB)*4, trace->at(iB)-minval);
    }
  }
 }
