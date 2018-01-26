@@ -51,7 +51,7 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename, const int ll
    outTree->Branch("ROOT_QDC[4]",&ROOT_qdc,"QDC[4]/D");
    outTree->Branch("ROOT_time[4]",&ROOT_time,"time[4]/D");
    outTree->Branch("ROOT_max[4]",&ROOT_max,"Max[4]/I");
-
+   outTree->Branch("ROOT_delta[4]",&ROOT_delta,"delta[4]/D");
    outTree->Branch("ROOT_Xphase[2]",&ROOT_Xphase,"Xphase[2]/D");
    outTree->Branch("ROOT_Xbeta[2]",&ROOT_Xbeta,"Xbeta[2]/D");
    outTree->Branch("ROOT_Xgamma[2]",&ROOT_Xgamma,"Xgamma[2]/D");
@@ -83,8 +83,8 @@ void newTimingClass::Loop(Long64_t nentries,const Char_t *filename, const int ll
 
      if(jentry%10000==0)
 	cout<<"."<<flush;
-     Fit(jentry,kTRUE);
-     //Fit(jentry,kFALSE); //No fix beta and gamma
+//     Fit(jentry,kTRUE);
+     Fit(jentry,kFALSE); //No fix beta and gamma
 
 //     FillHist(hPulse[0], trace_start1, llimit);
 //     FillHist(hPulse[1], trace_start2, llimit);
@@ -128,6 +128,7 @@ void FillHist(TH2F* hPs, std::vector<unsigned int> *trace, const int llimit){
   int ulimit = llimit + 5000;
   UInt_t size = trace->size();
   UInt_t maxval = *std::max_element(trace->begin(),trace->end());
+  UInt_t minval = *std::min_element(trace->begin(),trace->end());
   if (size != 0 && llimit<(Int_t)maxval && (Int_t)maxval<ulimit){
    for (UInt_t iB=0; iB<size; iB++){
     hPs->Fill(((Int_t)iB)*4, trace->at(iB));

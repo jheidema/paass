@@ -93,7 +93,7 @@ public :
    Double_t ROOT_chisq[4];
    Double_t ROOT_qdc[4];
    Double_t ROOT_max[4];
-
+   Double_t ROOT_delta[4];
    Double_t Xbeta[4];
    Double_t Xgamma[4];
    
@@ -461,13 +461,15 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
   Double_t baseline[4]={start1_abase,start2_abase,stop1_abase,stop2_abase};
   Double_t timestamp[4]={StartTimeStamp[0],StartTimeStamp[1],StopTimeStamp[0],StopTimeStamp[1]};
   Int_t maximum[4]={StartMaximum[0],StartMaximum[1],StopTimeMaximum[0],StopTimeMaximum[1]};
-  Double_t delta[4]={3.5,3.5,3.5,3.5};
+  //Double_t delta[4]={3.5,3.5,3.5,3.5}; // Used as of 1/18/2018
+  Double_t delta[4]={2.85,2.85,3.5,3.5};
 
+
+  ////// Variable Gamma params for new boards /////////
   Double_t gamma_V0[2][3] = {{0.171,0.198,0.146},{0.164,0.194,0.206}};
   Double_t gamma_V1[2][3] = {{9.13E-7,1.228E-7,4.162E-7},{1.058E-6,1.271E-7,1.508E-7}};
   Double_t gamma_V2[2][3] = {{-6.012E-12,-1.183E-13,-5.268E-13},{-7.733E-12,-1.183E-13,-2.400E-13}};
   
-  ////// Variable Gamma params for new boards /////////
 
 
   //Old Boards
@@ -481,8 +483,8 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
 //  Double_t fit_beta[4]={0.12,0.12,0.12,0.12};
 //  Double_t fit_gamma[4]={0.245,0.245,0.245,0.245};
 
-  Double_t fit_beta[4]={0.1317,0.1102,0.1266,.01250};
-  Double_t fit_gamma[4]={0.2494,0.2554,0.245,0.245};
+  Double_t fit_beta[4]={0.1285,0.1102,0.1266,.01250};
+  Double_t fit_gamma[4]={0.248,0.2537,0.245,0.245};
 
 
   vector<pair<Int_t,Int_t>>fit_limits;
@@ -495,6 +497,7 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
   for(Int_t m=0;m<4;m++){
     ROOT_phase[m]=-100;
     ROOT_beta[m]=-100;
+    ROOT_delta[m]=-100;
     ROOT_gamma[m]=-100;
     beta[m]=fit_beta[m];
     gamma[m]= fit_gamma[m];
@@ -506,12 +509,14 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
       if(trace_start1->size()!=0){
 	it=max_element(trace_start1->begin(),trace_start1->end());
 	max_position=distance(trace_start1->begin(),it);
+        maximum[0] = *max_element(trace_start1->begin(),trace_start1->end());
       }
       break;
     case 1:
       if(trace_start2->size()!=0){
 	it=max_element(trace_start2->begin(),trace_start2->end());
 	max_position=distance(trace_start2->begin(),it);
+	maximum[1]=*max_element(trace_start2->begin(),trace_start2->end());
       }
       break;
     case 2:
@@ -548,7 +553,7 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
         if (qdc[m]>=400000) fFits[m]->FixParameter(3, gamma_V0[m-2][2]+gamma_V1[m-2][2]*qdc[m]+(gamma_V2[m-2][2]*qdc[m])*qdc[m]);
        }
       }      
-      fFits[m]->FixParameter(5,delta[m]);
+//      fFits[m]->FixParameter(5,delta[m]);
       TFitResultPtr status=fTraces[m]->Fit(fFits[m],"RNQSW");
       fStatus[m] =status->Status(); 
        if(status->IsValid()){
@@ -556,6 +561,7 @@ void  newTimingClass::Fit(Long64_t entry, Bool_t fix){
  	ROOT_phase[m]=fFits[m]->GetParameter(0)-range.first+max_position;
  	ROOT_beta[m]=fFits[m]->GetParameter(2);
  	ROOT_gamma[m]=fFits[m]->GetParameter(3);
+        ROOT_delta[m]=fFits[m]->GetParameter(5);
  	ROOT_chisq[m]=fFits[m]->GetChisquare();
  	//ROOT_time[m]=fFits[m]->GetParameter(0)+timestamp[m];
  	ROOT_time[m]=ROOT_phase[m]*4+timestamp[m];
